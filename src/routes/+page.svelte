@@ -1,23 +1,23 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import ChexController from '../js/chex';
-    export let chexController: ChexController | null = null;
+    import CloudController from '../js/cloud';
+    export let controller: CloudController | null = null;
 
     onMount(async () => {
         const containerDiv: HTMLDivElement | null = document.querySelector(".floaty-container");
-        chexController = new ChexController(
+        controller = new CloudController(
             {container: containerDiv});
-        chexController.start();
+        controller.start();
     });
 
     export const freeze = () => {
         //chexController?.freeze();
     }
     export const start = () => {
-        chexController?.start();
+        controller?.start();
     }
     export const end = () => {
-        chexController?.stop();
+        controller?.stop();
     }
     export const clear = () => {
         //chexController?.clear();
@@ -88,8 +88,9 @@
         margin: 0;
         height: 100vh;
         width: 100vw;
-        overflow: hidden;
+        overflow: hidden !important;
     }
+ 
     .float-square{
         fill:rgb(175, 82, 0);
     }

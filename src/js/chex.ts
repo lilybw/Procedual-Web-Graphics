@@ -13,9 +13,9 @@ const defaultConfig: ChexConfig = {
     minArcOpacity: 1,
     maxArcOpacity: 1,
     arcHSL: (arcInfo: ArcInfo) => [
-        Math.sin(arcInfo.number / 20) * 25 + 30,
-        Math.sin((arcInfo.currentAngle / 360) % 360) * 100,
-        50],
+        (Date.now() - arcInfo.spawnMS) / 100,
+        100-arcInfo.number,
+        100-arcInfo.number],
     minArcSpacing: 10,
     maxArcSpacing: 10,
     maxArcCount: 55,
@@ -23,7 +23,7 @@ const defaultConfig: ChexConfig = {
     updateFrequency: 30,
     maxRotationSpeed: 200,
     minRotationSpeed: 20,
-    scatter: true,
+    scatter: false,
     backgroundColor: [300,100,50,1],
     globalRotationSpeed: 0,
     enableBackground: false,
@@ -32,6 +32,7 @@ const defaultConfig: ChexConfig = {
     speedNormalizationScalar: 1,
     normalizeArcLength: true,
     lengthNormalizationScalar: 2,
+    massive: false
 }
 
 export default class ChexController implements Controller{
@@ -114,27 +115,70 @@ export default class ChexController implements Controller{
 
             let arcLengthDeg: number = Math.random() * (this.config.maxArcLength! - this.config.minArcLength!) + this.config.minArcLength!;
             if(this.config.normalizeArcLength!){
-                const radiusDiffFactor = currentCenterOffset / this.config.centerOffset!;
-                arcLengthDeg /= radiusDiffFactor == 0 ? 1 : radiusDiffFactor;
-                //linearly increase the arc length to lessen the normalization effect
-                //minus 1 because I feel like a normalizationScalar of 1 should have no effect. Wheras 0 might feel like causing a bug.
-                arcLengthDeg += (this.config.lengthNormalizationScalar! - 1) * radiusDiffFactor;
-                arcLengthDeg = Math.abs(arcLengthDeg);
+                arcLengthDeg = this.normalizeArcLength(arcLengthDeg, currentCenterOffset);
             }
             arcLengthDeg *= arcRotationDirection;
 
-            this.field.push({
-                    number: i, 
-                    length: arcLengthDeg,
-                    width: Math.random() * (this.config.maxArcWidth! - this.config.minArcWidth!) + this.config.minArcWidth!,
-                    distanceFromCenter: currentCenterOffset,
-                    currentAngle: this.config.scatter! ? Math.random() * 360 : 0,
-                    rotationSpeed: arcSpeed,
-                    clockwise: arcRotationDirection == 1 ? true : false
-                }
-            );
+            if(this.config.massive!){
+                let ring = this.fillRing(this.getArcInfoObject(i, arcLengthDeg,currentCenterOffset, arcSpeed, arcRotationDirection));
+                this.field.push(...ring);
+                i+=ring.length;
+            }else{
+                this.field.push(this.getArcInfoObject(i, arcLengthDeg,currentCenterOffset, arcSpeed, arcRotationDirection));
+            }
+            
             currentCenterOffset += Math.random() * (this.config.maxArcSpacing! - this.config.minArcSpacing!) + this.config.minArcSpacing!;
         }
+    }
+
+    private fillRing = (mainArc: ArcInfo): ArcInfo[] => {
+        const toReturn: ArcInfo[] = [mainArc];
+        let degreesLeft = 360 - mainArc.length;
+        let latestArcInfo = mainArc;
+
+        while(degreesLeft > 0){
+            let newArcLength = Math.min(degreesLeft, Math.random() * (this.config.maxArcLength! - this.config.minArcLength!) + this.config.minArcLength!);
+            if(this.config.normalizeArcLength!){
+                newArcLength = this.normalizeArcLength(newArcLength, latestArcInfo.distanceFromCenter);
+            }
+            degreesLeft -= newArcLength;
+            newArcLength *= latestArcInfo.clockwise ? 1 : -1;
+
+            const newArc = this.getArcInfoObject(
+                latestArcInfo.number + 1,
+                newArcLength,
+                latestArcInfo.distanceFromCenter,
+                latestArcInfo.rotationSpeed,
+                latestArcInfo.clockwise ? 1 : -1
+            );
+            toReturn.push(newArc);
+            
+            latestArcInfo = newArc;
+        }
+
+        return toReturn;
+    }
+
+    private normalizeArcLength(length: number, radius: number): number{
+        const radiusDiffFactor = radius / this.config.centerOffset!;
+        length /= radiusDiffFactor == 0 ? 1 : radiusDiffFactor;
+        //linearly increase the arc length to lessen the normalization effect
+        //minus 1 because I feel like a normalizationScalar of 1 should have no effect, wheras 0 might feel like causing a bug.
+        length += (this.config.lengthNormalizationScalar! - 1) * radiusDiffFactor;
+        return Math.abs(length);
+    }
+
+    private getArcInfoObject(number: number, length: number, radius: number, rotationSpeed: number, rotationDirection: number): ArcInfo{
+        return {
+            number: number,
+            length: length, 
+            width: Math.random() * (this.config.maxArcWidth! - this.config.minArcWidth!) + this.config.minArcWidth!, 
+            distanceFromCenter: radius, 
+            currentAngle: this.config.scatter! ? Math.random() * 360 : 0,
+            rotationSpeed: rotationSpeed, 
+            clockwise: rotationDirection == 1 ? true : false,
+            spawnMS: Date.now()
+        };
     }
 
     private evaluateField = (deltaMs: number, ctx: CanvasRenderingContext2D) => {

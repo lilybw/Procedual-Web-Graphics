@@ -1,3 +1,4 @@
+//Author: github.com/GustavBW
 export type Controller = {
     /**
      * Updates any cache the controller has.
@@ -135,6 +136,10 @@ export type ArcInfo = {
      */
     rotationSpeed: number;
     clockwise: boolean;
+    /**
+     * The timestamp of the creation of this arc info object.
+     */
+    spawnMS: number;
 }
 export interface ChexConfig extends Contained {
     container: HTMLElement | null;
@@ -234,11 +239,39 @@ export interface ChexConfig extends Contained {
      * Default: 1
      */
     lengthNormalizationScalar?: number;
+    /**
+     * Fills all the rings with arcs of the same width. No gaps between arcs.
+     * Do bare in mind that this can be computationally expensive depending on the size of the field.
+     */
+    massive?: boolean;
 
     /**
-     * A function that given a set of parameters returns a number array of length 3 representing the HSL color of the arc
+     * A function that given a set of parameters returns a number array of length 3 representing the HSL color of the arc.
+     * This color is evaulated every frame of the simulation so be aware of performance.
      * @param archInfo information about the arc, such as its length, width, distance from center and what number of arc it is.
      * @returns a number array of length 3 representing the HSL color of the arc
      */
     arcHSL?: (arcInfo: ArcInfo) => number[];
+}
+export interface WiresConfig extends Contained {
+    container: HTMLElement | null;
+}
+
+export type PelletInfo = {
+    number: number, 
+    x: number,
+    y: number,
+    originalPosition: number[],
+    size: number,
+    spawnMS: number
+}
+
+export interface CloudConfig extends Contained {
+    container: HTMLElement | null;
+    distributionType?: String;
+    density?: number;
+    minSize?: number;
+    maxSize?: number;
+    imgSource?: string | string[] | null;
+    pelletHSLA?: (pellet: PelletInfo) => [0, 100, 100, 1],
 }
