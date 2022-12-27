@@ -1,6 +1,6 @@
 // Author: https://github.com/GustavBW
 
-import { scaleVector, dotProduct, degreesToRadians, vectorMagnitude, projectVector } from "./vmath";
+import { scaleVector, dotProduct, degreesToRadians, vectorMagnitude, projectVector } from "./util/vmath";
 import { copy, fillKeys } from "./objUtil";
 import type { Controller, FloatsConfig } from "./controller";
 

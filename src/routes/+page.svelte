@@ -1,11 +1,11 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import CloudController from '../js/cloud';
-    export let controller: CloudController | null = null;
+    import ChexController from '../js/chex';
+    export let controller: ChexController | null = null;
 
     onMount(async () => {
         const containerDiv: HTMLDivElement | null = document.querySelector(".floaty-container");
-        controller = new CloudController(
+        controller = new ChexController(
             {container: containerDiv});
         controller.start();
     });
@@ -24,6 +24,8 @@
     }
 </script>
 
+<div class="floaty-container" />
+
 <div>
     <p>Floats</p>
     <button on:click={freeze}>Freeze</button>
@@ -31,7 +33,6 @@
     <button on:click={end}>End</button>
     <button on:click={clear}>Clear</button>
 </div>
-
 
 
 <div class="static-background">
@@ -45,7 +46,7 @@
 
 </div>
 
-<div class="floaty-container" />
+
 
 <style>
     :root{
@@ -85,6 +86,9 @@
         z-index: -1000;
     }
     .floaty-container{
+        position: absolute;
+        top: 0;
+        left: 0;
         margin: 0;
         height: 100vh;
         width: 100vw;

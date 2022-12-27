@@ -9,7 +9,9 @@
 export const mapToRange = (a: number, rangeStart: number, rangeEnd: number): number => {
     return (1/(1 + Math.E ** -a))*(rangeEnd-rangeStart) + rangeStart;
 }
+
 //GitHub Copilot suggested this function. Its probably wrong. Actually yeah its just wrong.
 export const snapToIncrement = (a: number, increment: number): number => {
     return Math.round(a/increment)*increment;
 }
+

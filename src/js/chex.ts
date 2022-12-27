@@ -2,7 +2,9 @@
 
 import type { Controller, ChexConfig, ArcInfo } from "./controller";
 import { copy, fillKeys } from "./objUtil";
-import {degreesToRadians} from "./vmath";
+import {degreesToRadians} from "./util/vmath";
+import {pixelize} from "./postprocessing/pixelize";
+import { to2DArray,to1DArray } from "./util/arrayUtil";
 
 const defaultConfig: ChexConfig = {
     container: null,
@@ -60,7 +62,7 @@ export default class ChexController implements Controller{
             throw new Error(error);
         }
         let canvas = this.prepareContainerAndGetCanvas();
-        this.ctx = canvas.getContext("2d");
+        this.ctx = canvas.getContext("2d",{willReadFrequently: true});
         if(this.ctx === null){
             throw new Error("Could not get canvas context");
         }
@@ -213,6 +215,18 @@ export default class ChexController implements Controller{
             ctx.stroke();
             ctx.closePath();
         });
+
+        const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const pixelizedData = pixelize(to2DArray(imageData.data, ctx.canvas.width, ctx.canvas.height), 400);
+
+        imageData.data.set(
+            to1DArray(
+                pixelizedData
+            )
+        );
+
+        ctx.putImageData(imageData,0,0);
+        
     }
 
     private prepareContainerAndGetCanvas = () => {
