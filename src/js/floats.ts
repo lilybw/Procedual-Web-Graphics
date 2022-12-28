@@ -1,19 +1,19 @@
 // Author: https://github.com/GustavBW
 
 import { scaleVector, dotProduct, degreesToRadians, vectorMagnitude, projectVector } from "./util/vmath";
-import { copy, fillKeys } from "./objUtil";
+import { copy, fillKeys } from "./util/objUtil";
 import type { Controller, FloatsConfig } from "./controller";
 
 
 
 const defaultConfig: FloatsConfig = {
-    travelTime: 10_000, // How many milliseconds it takes a square to cross the screen
+    travelTime: 20_000, // How many milliseconds it takes a square to cross the screen
     generationSpeed: 100, // How many milliseconds between each square generation.
     maxSquareSize: 400, // The maximum size of the squares in pixels
     squareMinOpcacity: 0.3, // The minimum opacity of the squares
     squareMaxOpacity: 0.6, // The maximum opacity of the squares
     squareMinSize: 10, // The minimum size of the squares in pixels
-    fadeStartTime: 5000, // The time in ms it takes for the squares to fade out
+    fadeStartTime: 10_000, // The time in ms it takes for the squares to fade out
     fadeSpeed: 2000, // travelTime - fadeStartTime = when the square starts to fade out
     baseColorHS: [270, 100, 0], // The base color of the squares HSL format
     travelVector: [0, 1], // The direction the squares travel in

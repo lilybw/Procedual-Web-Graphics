@@ -1,10 +1,12 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import type {Controller} from '../js/controller';
     import ChexController from '../js/chex';
-    export let controller: ChexController | null = null;
+    import FloatsController from '../js/floats';
+    export let controller: Controller | null = null;
 
     onMount(async () => {
-        const containerDiv: HTMLDivElement | null = document.querySelector(".floaty-container");
+        const containerDiv: HTMLDivElement | null = document.getElementById("container") as HTMLDivElement;
         controller = new ChexController(
             {container: containerDiv});
         controller.start();
@@ -14,9 +16,11 @@
         //chexController?.freeze();
     }
     export const start = () => {
+        console.log("Starting controller " + (controller as any).constructor.name);
         controller?.start();
     }
     export const end = () => {
+        console.log("Stopping controller " + (controller as any).constructor.name);
         controller?.stop();
     }
     export const clear = () => {
@@ -24,10 +28,10 @@
     }
 </script>
 
-<div class="floaty-container" />
+<div id="container" class="floaty-container" />
 
-<div>
-    <p>Floats</p>
+<div style="z-index: 10">
+    <p>CHEX</p>
     <button on:click={freeze}>Freeze</button>
     <button on:click={start}>Start</button>
     <button on:click={end}>End</button>
@@ -85,14 +89,16 @@
         scroll-behavior: smooth;
         z-index: -1000;
     }
+
     .floaty-container{
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         margin: 0;
         height: 100vh;
         width: 100vw;
         overflow: hidden !important;
+        z-index: -1;
     }
  
     .float-square{

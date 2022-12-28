@@ -1,6 +1,6 @@
 //Author github.com/GustavBW
 import type { Controller, CloudConfig, PelletInfo } from "./controller";
-import { fillKeys, copy } from "./objUtil";
+import { fillKeys, copy } from "./util/objUtil";
 
 
 const defaultConfig: CloudConfig = {

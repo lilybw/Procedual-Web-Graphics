@@ -32,10 +32,7 @@ export const to1DArray = (array: Uint8ClampedArray[]): Uint8ClampedArray => {
 export const fill1DArray = (source: Uint8ClampedArray[], target: Uint8ClampedArray): Uint8ClampedArray => {
     for (let y = 0; y < source.length; y++) {
         for (let x = 0; x < source[y].length; x++) {
-            // Get the index of the current element in the target array
             const i = y * source[y].length + x;
-
-            // Assign the value from the source array to the target array
             target[i] = source[y][x];
         }
     }

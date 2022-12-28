@@ -1,10 +1,10 @@
 //Author: https://github.com/GustavBW
 
 import type { Controller, ChexConfig, ArcInfo } from "./controller";
-import { copy, fillKeys } from "./objUtil";
+import { copy, fillKeys } from "./util/objUtil";
 import {degreesToRadians} from "./util/vmath";
-import {pixelize} from "./postprocessing/pixelize";
-import { to2DArray,to1DArray } from "./util/arrayUtil";
+import {clearChildren} from "./util/htmlUtil";
+import Pixelizor from "./postprocessing/pixelize";
 
 const defaultConfig: ChexConfig = {
     container: null,
@@ -43,6 +43,7 @@ export default class ChexController implements Controller{
     private field: ArcInfo[] = [];
     private fieldUpdateInterval: NodeJS.Timer | null = null;
     private ctx: CanvasRenderingContext2D | null = null;
+    private pixelizor: Pixelizor;
 
     constructor(config: ChexConfig){
         const actualConfig = fillKeys(config, copy(defaultConfig));
@@ -52,29 +53,33 @@ export default class ChexController implements Controller{
         }
         this.config = actualConfig;
         this.normalizeConfig(this.config);
+        this.pixelizor = new Pixelizor(this.config.container!.offsetWidth, this.config.container!.offsetHeight);
     }
     public update = () => {
-
+        //update post process chain
+        //update canvas and ctx
     };
     public start = () => {
         let error = this.verifyConfig(this.config);
         if(error !== null){
             throw new Error(error);
         }
+
         let canvas = this.prepareContainerAndGetCanvas();
         this.ctx = canvas.getContext("2d",{willReadFrequently: true});
         if(this.ctx === null){
             throw new Error("Could not get canvas context");
         }
-
+       
         this.generateFieldInfo();
+
         let lastCallMs = Date.now();
         let currentGlobalRotation = 0;
         this.fieldUpdateInterval = setInterval(
             () => {
                 this.evaluateField(Date.now() - lastCallMs, this.ctx as CanvasRenderingContext2D);
                 lastCallMs = Date.now();
-                canvas.style.transform = `rotate(${currentGlobalRotation}deg)`;
+                this.config.container!.style.transform = `rotate(${currentGlobalRotation}deg)`;
                 currentGlobalRotation += this.config.globalRotationSpeed!;
             }, 
             this.config.updateFrequency!
@@ -86,12 +91,12 @@ export default class ChexController implements Controller{
         if(this.fieldUpdateInterval !== null){
             clearInterval(this.fieldUpdateInterval);
         }
-        
     };
 
     private clearField = () => {
         this.field.length = 0;
         this.ctx?.clearRect(0, 0, this.config.container!.offsetWidth, this.config.container!.offsetHeight);
+        clearChildren(this.config.container!);
     }
 
     private generateFieldInfo = () => {
@@ -216,29 +221,26 @@ export default class ChexController implements Controller{
             ctx.closePath();
         });
 
-        const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-        const pixelizedData = pixelize(to2DArray(imageData.data, ctx.canvas.width, ctx.canvas.height), 400);
-
-        imageData.data.set(
-            to1DArray(
-                pixelizedData
-            )
-        );
-
-        ctx.putImageData(imageData,0,0);
-        
+        //const currentData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+        //const pixelizedData = this.pixelizor.pixelize(currentData, 40);
+        //ctx.putImageData(pixelizedData,0,0);
     }
 
     private prepareContainerAndGetCanvas = () => {
         let canvas = document.createElement("canvas");
+
         canvas.width = this.config.container!.offsetWidth;
         canvas.height = this.config.container!.offsetHeight;
-        this.config.container!.appendChild(canvas);
+        canvas.style.position = this.config.container!.style.position;
+        canvas.style.top = this.config.container!.style.top;
+        canvas.style.left = this.config.container!.style.left;
+
+        console.log("appended: " + this.config.container!.appendChild(canvas) + " to: " + this.config.container!);
         return canvas;
     }
 
     public verifyConfig = (config: any) => {
-        if(config.container === null) return "Chex container is null";   
+        if(config.container === null || config.container === undefined) return "Chex container is null";   
         return null
     };
     public normalizeConfig = (config: any) => {};
