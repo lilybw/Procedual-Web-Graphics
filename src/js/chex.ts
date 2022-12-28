@@ -16,8 +16,8 @@ const defaultConfig: ChexConfig = {
     maxArcOpacity: 1,
     arcHSL: (arcInfo: ArcInfo) => [
         (Date.now() - arcInfo.spawnMS) / 100,
-        100-arcInfo.number,
-        100-arcInfo.number],
+        100 - arcInfo.number,
+        80 - arcInfo.number],
     minArcSpacing: 10,
     maxArcSpacing: 10,
     maxArcCount: 55,
@@ -25,7 +25,7 @@ const defaultConfig: ChexConfig = {
     updateFrequency: 30,
     maxRotationSpeed: 200,
     minRotationSpeed: 20,
-    scatter: false,
+    scatter: true,
     backgroundColor: [300,100,50,1],
     globalRotationSpeed: 0,
     enableBackground: false,
@@ -44,6 +44,8 @@ export default class ChexController implements Controller{
     private fieldUpdateInterval: NodeJS.Timer | null = null;
     private ctx: CanvasRenderingContext2D | null = null;
     private pixelizor: Pixelizor;
+    private isFrozen: boolean = false;
+    private isRunning: boolean = false;
 
     constructor(config: ChexConfig){
         const actualConfig = fillKeys(config, copy(defaultConfig));
@@ -55,10 +57,12 @@ export default class ChexController implements Controller{
         this.normalizeConfig(this.config);
         this.pixelizor = new Pixelizor(this.config.container!.offsetWidth, this.config.container!.offsetHeight);
     }
+    
     public update = () => {
         //update post process chain
         //update canvas and ctx
     };
+
     public start = () => {
         let error = this.verifyConfig(this.config);
         if(error !== null){
@@ -100,7 +104,6 @@ export default class ChexController implements Controller{
     }
 
     private generateFieldInfo = () => {
-        this.clearField();
         let currentCenterOffset: number = this.config.centerOffset!;
         //E.g. while not having generated the max number of arcs and the current center offset is less than the width of the container
         for (let i = 0; 
@@ -221,9 +224,9 @@ export default class ChexController implements Controller{
             ctx.closePath();
         });
 
-        //const currentData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-        //const pixelizedData = this.pixelizor.pixelize(currentData, 40);
-        //ctx.putImageData(pixelizedData,0,0);
+        const currentData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const pixelizedData = this.pixelizor.pixelize(currentData, 40);
+        ctx.putImageData(pixelizedData,0,0);
     }
 
     private prepareContainerAndGetCanvas = () => {
@@ -235,7 +238,7 @@ export default class ChexController implements Controller{
         canvas.style.top = this.config.container!.style.top;
         canvas.style.left = this.config.container!.style.left;
 
-        console.log("appended: " + this.config.container!.appendChild(canvas) + " to: " + this.config.container!);
+        this.config.container!.appendChild(canvas);
         return canvas;
     }
 
