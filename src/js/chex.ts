@@ -39,7 +39,7 @@ const defaultConfig: ChexConfig = {
 
 export default class ChexController implements Controller{
 
-    private config: ChexConfig;
+    public config: ChexConfig;
     private field: ArcInfo[] = [];
     private fieldUpdateInterval: NodeJS.Timer | null = null;
     private ctx: CanvasRenderingContext2D | null = null;
@@ -223,10 +223,11 @@ export default class ChexController implements Controller{
             ctx.stroke();
             ctx.closePath();
         });
-
-        const currentData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+        /*
+        const currentData = ctx.getImageData(0, 0, ctx.canvas.offsetWidth, ctx.canvas.offsetHeight);
         const pixelizedData = this.pixelizor.pixelize(currentData, 40);
         ctx.putImageData(pixelizedData,0,0);
+        */
     }
 
     private prepareContainerAndGetCanvas = () => {

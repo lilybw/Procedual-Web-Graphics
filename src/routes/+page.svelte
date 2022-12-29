@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import type {Controller} from '../js/controller';
     import ChexController from '../js/chex';
+    import { getGui } from '../js/autogui/autoGui';
     import FloatsController from '../js/floats';
     export let controller: Controller | null = null;
 
@@ -10,6 +11,10 @@
         controller = new ChexController(
             {container: containerDiv});
         controller.start();
+        document.getElementById("exposed-config")?.appendChild(
+            getGui(
+                (controller as ChexController).config, undefined, 'Chex Config')
+                );
     });
 
     export const freeze = () => {
@@ -30,7 +35,7 @@
 
 <div id="container" class="floaty-container" />
 
-<div style="z-index: 10">
+<div id="exposed-config" style="z-index: 10">
     <p>CHEX</p>
     <button on:click={freeze}>Freeze</button>
     <button on:click={start}>Start</button>
