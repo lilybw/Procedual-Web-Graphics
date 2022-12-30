@@ -12,12 +12,11 @@ const defaultConfig: ChexConfig = {
     maxArcLength: 180,
     minArcWidth: 5,
     maxArcWidth: 15,
-    minArcOpacity: 1,
-    maxArcOpacity: 1,
-    arcHSL: (arcInfo: ArcInfo) => [
+    arcHSLA: (arcInfo: ArcInfo) => [
         (Date.now() - arcInfo.spawnMS) / 100,
         100 - arcInfo.number,
-        80 - arcInfo.number],
+        80 - arcInfo.number,
+        1],
     minArcSpacing: 10,
     maxArcSpacing: 10,
     maxArcCount: 55,
@@ -218,8 +217,8 @@ export default class ChexController implements Controller{
             );
             arc.currentAngle += arc.rotationSpeed * (deltaMs / 1000);
             ctx.lineWidth = arc.width;
-            const arcColor = this.config.arcHSL!(arc);
-            ctx.strokeStyle = `hsla(${arcColor[0]},${arcColor[1]}%,${arcColor[2]}%,${Math.random() * (this.config.maxArcOpacity! - this.config.minArcOpacity!) + this.config.minArcOpacity!})`;
+            const arcColor = this.config.arcHSLA!(arc);
+            ctx.strokeStyle = `hsla(${arcColor[0]},${arcColor[1]}%,${arcColor[2]}%,${arcColor[3]})`;
             ctx.stroke();
             ctx.closePath();
         });

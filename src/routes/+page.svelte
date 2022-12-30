@@ -8,12 +8,12 @@
 
     onMount(async () => {
         const containerDiv: HTMLDivElement | null = document.getElementById("container") as HTMLDivElement;
-        controller = new ChexController(
+        controller = new FloatsController(
             {container: containerDiv});
         controller.start();
         document.getElementById("exposed-config")?.appendChild(
             getGui(
-                (controller as ChexController).config, undefined, 'Chex Config')
+                {object: (controller as ChexController).config, titleText: 'Floats Config', isEditable: true})
                 );
     });
 
@@ -35,8 +35,8 @@
 
 <div id="container" class="floaty-container" />
 
-<div id="exposed-config" style="z-index: 10">
-    <p>CHEX</p>
+<div style="z-index: 10">
+    <div id="exposed-config"></div>
     <button on:click={freeze}>Freeze</button>
     <button on:click={start}>Start</button>
     <button on:click={end}>End</button>

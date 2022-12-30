@@ -160,14 +160,6 @@ export interface ChexConfig extends Contained {
      */
     maxArcWidth?: number;
     /**
-     * The minimum opacity of an arc as a range from 0 to 1
-     */
-    minArcOpacity?: number;
-    /**
-     * The maximum opacity of an arc as a range from 0 to 1
-     */
-    maxArcOpacity?: number;
-    /**
      * The minimum number of pixels between arcs
      */
     minArcSpacing?: number;
@@ -246,12 +238,12 @@ export interface ChexConfig extends Contained {
     massive?: boolean;
 
     /**
-     * A function that given a set of parameters returns a number array of length 3 representing the HSL color of the arc.
+     * A function that given a set of parameters returns a number array of length 4 representing the HSLA color of the arc.
      * This color is evaulated every frame of the simulation so be aware of performance.
-     * @param archInfo information about the arc, such as its length, width, distance from center and what number of arc it is.
-     * @returns a number array of length 3 representing the HSL color of the arc
+     * @param ArcInfo information about the arc.
+     * @returns a number array of length 4 representing the HSLA color of the arc
      */
-    arcHSL?: (arcInfo: ArcInfo) => number[];
+    arcHSLA?: (arcInfo: ArcInfo) => number[];
 }
 export interface WiresConfig extends Contained {
     container: HTMLElement | null;
