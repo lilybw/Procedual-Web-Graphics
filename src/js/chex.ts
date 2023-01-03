@@ -57,9 +57,22 @@ export default class ChexController implements Controller{
         this.pixelizor = new Pixelizor(this.config.container!.offsetWidth, this.config.container!.offsetHeight);
     }
     
+    /**
+     * Updates the canvas and it's context.
+     * Then updates the current arc field info.
+     */
     public update = () => {
         //update post process chain
         //update canvas and ctx
+
+        //update field in place
+        const newField = this.generateFieldInfo();
+        const resizedField: ArcInfo[] = [];
+        for(let i = 0; i < this.field.length && i < newField.length; i++){
+            resizedField.push(fillKeys(this.field[i], newField[i]))
+        }
+        this.clearField();
+        this.field = resizedField;
     };
 
     public start = () => {
@@ -74,7 +87,7 @@ export default class ChexController implements Controller{
             throw new Error("Could not get canvas context");
         }
        
-        this.generateFieldInfo();
+        this.field = this.generateFieldInfo();
 
         let lastCallMs = Date.now();
         let currentGlobalRotation = 0;
@@ -94,15 +107,16 @@ export default class ChexController implements Controller{
         if(this.fieldUpdateInterval !== null){
             clearInterval(this.fieldUpdateInterval);
         }
+        clearChildren(this.config.container!);
     };
 
     private clearField = () => {
         this.field.length = 0;
         this.ctx?.clearRect(0, 0, this.config.container!.offsetWidth, this.config.container!.offsetHeight);
-        clearChildren(this.config.container!);
     }
 
-    private generateFieldInfo = () => {
+    private generateFieldInfo = (): ArcInfo[] => {
+        const newField: ArcInfo[] = [];
         let currentCenterOffset: number = this.config.centerOffset!;
         //E.g. while not having generated the max number of arcs and the current center offset is less than the width of the container
         for (let i = 0; 
@@ -130,14 +144,15 @@ export default class ChexController implements Controller{
 
             if(this.config.massive!){
                 let ring = this.fillRing(this.getArcInfoObject(i, arcLengthDeg,currentCenterOffset, arcSpeed, arcRotationDirection));
-                this.field.push(...ring);
+                newField.push(...ring);
                 i+=ring.length;
             }else{
-                this.field.push(this.getArcInfoObject(i, arcLengthDeg,currentCenterOffset, arcSpeed, arcRotationDirection));
+                newField.push(this.getArcInfoObject(i, arcLengthDeg,currentCenterOffset, arcSpeed, arcRotationDirection));
             }
             
             currentCenterOffset += Math.random() * (this.config.maxArcSpacing! - this.config.minArcSpacing!) + this.config.minArcSpacing!;
         }
+        return newField;
     }
 
     private fillRing = (mainArc: ArcInfo): ArcInfo[] => {

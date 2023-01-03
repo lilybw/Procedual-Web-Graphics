@@ -1,24 +1,30 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import type {Controller} from '../js/controller';
-    import ChexController from '../js/chex';
     import { getGui } from '../js/autogui/autoGui';
-    import FloatsController from '../js/floats';
-    export let controller: Controller | null = null;
+    import ChexController from '../js/chex';
+    export let controller: ChexController | null = null;
 
     onMount(async () => {
         const containerDiv: HTMLDivElement | null = document.getElementById("container") as HTMLDivElement;
-        controller = new FloatsController(
+        controller = new ChexController(
             {container: containerDiv});
         controller.start();
+        
         document.getElementById("exposed-config")?.appendChild(
             getGui(
-                {object: (controller as ChexController).config, titleText: 'Floats Config', isEditable: true})
-                );
+                {object: (controller as ChexController).config, 
+                    titleText: 'Floats Config', 
+                    isEditable: true,
+                    onAfterUpdate: () => controller?.update()
+                }
+            )
+        );
+        
     });
 
     export const freeze = () => {
-        //chexController?.freeze();
+        //controller?.freeze();
     }
     export const start = () => {
         console.log("Starting controller " + (controller as any).constructor.name);
@@ -29,7 +35,7 @@
         controller?.stop();
     }
     export const clear = () => {
-        //chexController?.clear();
+        //controller?.clear();
     }
 </script>
 
