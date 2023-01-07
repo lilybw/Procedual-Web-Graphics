@@ -8,7 +8,10 @@
     onMount(async () => {
         const containerDiv: HTMLDivElement | null = document.getElementById("container") as HTMLDivElement;
         controller = new ChexController(
-            {container: containerDiv});
+            {container: containerDiv, 
+                onLineStartDraw: "M 1.3838445352206784e-08,1.9999999879974808 L 2.519138869153187e-07,2.0 L 1.9999997480861178,2.0 L 1.9999999861615556,1.9999999879974812 L 1.999999964384269,1.9999997506165115 L 1.7143698075418516,2.3580911526203841e-07 L 1.714369764407654,1.090366514612952e-08 L 1.7143695356629658,0.0 L 0.2856305239416741,0.0 L 0.2856302951969901,1.0903664711693196e-08 L 0.28563025206278647,2.3580911348043664e-07 L 3.5615739184644956e-08,1.999999750616507 L 1.3838445352206784e-08,1.9999999879974808 z",
+                onLineEndDraw: "M 1.3838445352206784e-08,1.9999999879974808 L 2.519138869153187e-07,2.0 L 1.9999997480861178,2.0 L 1.9999999861615556,1.9999999879974812 L 1.999999964384269,1.9999997506165115 L 1.7143698075418516,2.3580911526203841e-07 L 1.714369764407654,1.090366514612952e-08 L 1.7143695356629658,0.0 L 0.2856305239416741,0.0 L 0.2856302951969901,1.0903664711693196e-08 L 0.28563025206278647,2.3580911348043664e-07 L 3.5615739184644956e-08,1.999999750616507 L 1.3838445352206784e-08,1.9999999879974808 z"
+            });
         controller.start();
         
         document.getElementById("exposed-config")?.appendChild(
@@ -32,6 +35,7 @@
     }
     export const end = () => {
         console.log("Stopping controller " + (controller as any).constructor.name);
+        console.table(JSON.stringify(controller?.field))
         controller?.stop();
     }
     export const clear = () => {
@@ -67,7 +71,6 @@
     :root{
         overflow-y: scroll;
         scroll-behavior: smooth;
-        
     }
     .origin{
         top:0;

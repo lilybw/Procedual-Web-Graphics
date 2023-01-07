@@ -5,6 +5,7 @@ import { copy, fillKeys } from "./util/objUtil";
 import {degreesToRadians} from "./util/vmath";
 import {clearChildren} from "./util/htmlUtil";
 import Pixelizor from "./postprocessing/pixelize";
+import { path2DArrayFromFilepaths, path2DFromFilepath } from "./util/svgUtil";
 
 const defaultConfig: ChexConfig = {
     container: null,
@@ -33,13 +34,15 @@ const defaultConfig: ChexConfig = {
     speedNormalizationScalar: 1,
     normalizeArcLength: true,
     lengthNormalizationScalar: 2,
+    onLineStartDraw: undefined,
+    onLineEndDraw: undefined,
     massive: false
 }
 
 export default class ChexController implements Controller{
 
     public config: ChexConfig;
-    private field: ArcInfo[] = [];
+    public field: ArcInfo[] = [];
     private fieldUpdateInterval: NodeJS.Timer | null = null;
     private ctx: CanvasRenderingContext2D | null = null;
     private pixelizor: Pixelizor;
@@ -61,21 +64,28 @@ export default class ChexController implements Controller{
      * Updates the canvas and it's context.
      * Then updates the current arc field info.
      */
-    public update = () => {
+    public update = async () => {
         //update post process chain
         //update canvas and ctx
-
+       
         //update field in place
         const newField = this.generateFieldInfo();
         const resizedField: ArcInfo[] = [];
-        for(let i = 0; i < this.field.length && i < newField.length; i++){
-            resizedField.push(fillKeys(this.field[i], newField[i]))
+        for(let i = 0; i < newField.length; i++){
+            if(i < this.field.length){
+                resizedField.push(
+                    fillKeys(this.field[i], newField[i])
+                    )
+            }else{
+                resizedField.push(newField[i]);
+            }
+            
         }
         this.clearField();
         this.field = resizedField;
     };
 
-    public start = () => {
+    public start = async () => {
         let error = this.verifyConfig(this.config);
         if(error !== null){
             throw new Error(error);
@@ -102,7 +112,7 @@ export default class ChexController implements Controller{
         );
     };
 
-    public stop = () => {
+    public stop = async () => {
         this.clearField();
         if(this.fieldUpdateInterval !== null){
             clearInterval(this.fieldUpdateInterval);
@@ -110,13 +120,16 @@ export default class ChexController implements Controller{
         clearChildren(this.config.container!);
     };
 
-    private clearField = () => {
+    private clearField = async () => {
         this.field.length = 0;
         this.ctx?.clearRect(0, 0, this.config.container!.offsetWidth, this.config.container!.offsetHeight);
     }
 
     private generateFieldInfo = (): ArcInfo[] => {
         const newField: ArcInfo[] = [];
+        let onLineStartSVGs: Path2D[] = this.getPath2Ds(this.config.onLineStartDraw);
+        let onLineEndSVGs: Path2D[] = this.getPath2Ds(this.config.onLineEndDraw);
+
         let currentCenterOffset: number = this.config.centerOffset!;
         //E.g. while not having generated the max number of arcs and the current center offset is less than the width of the container
         for (let i = 0; 
@@ -143,11 +156,18 @@ export default class ChexController implements Controller{
             arcLengthDeg *= arcRotationDirection;
 
             if(this.config.massive!){
-                let ring = this.fillRing(this.getArcInfoObject(i, arcLengthDeg,currentCenterOffset, arcSpeed, arcRotationDirection));
+                let ring = this.fillRing(
+                        this.getArcInfoObject(i, arcLengthDeg,currentCenterOffset, arcSpeed, arcRotationDirection, 
+                            onLineStartSVGs[Math.floor(Math.random() * onLineStartSVGs.length)],
+                            onLineEndSVGs[Math.floor(Math.random() * onLineEndSVGs.length)]),
+                        onLineStartSVGs, onLineEndSVGs);
                 newField.push(...ring);
                 i+=ring.length;
             }else{
-                newField.push(this.getArcInfoObject(i, arcLengthDeg,currentCenterOffset, arcSpeed, arcRotationDirection));
+                newField.push(this.getArcInfoObject(
+                    i, arcLengthDeg,currentCenterOffset, arcSpeed, arcRotationDirection,
+                    onLineStartSVGs[Math.floor(Math.random() * onLineStartSVGs.length)],
+                    onLineEndSVGs[Math.floor(Math.random() * onLineEndSVGs.length)]));
             }
             
             currentCenterOffset += Math.random() * (this.config.maxArcSpacing! - this.config.minArcSpacing!) + this.config.minArcSpacing!;
@@ -155,7 +175,25 @@ export default class ChexController implements Controller{
         return newField;
     }
 
-    private fillRing = (mainArc: ArcInfo): ArcInfo[] => {
+    private getPath2Ds(svgPaths: string[] | string | undefined): Path2D[] {
+        console.log(svgPaths);
+        if(svgPaths === undefined){
+            return [];
+        }
+        if(typeof svgPaths === "string"){
+            //TODO: Fix the svg UTIL
+            return [new Path2D(svgPaths as string)];
+        }
+
+        const svgs = [];
+        for(let i = 0; i < svgPaths.length; i++){
+            svgs.push(new Path2D(svgPaths[i]));
+        }
+
+        return svgs;
+    }
+
+    private fillRing = (mainArc: ArcInfo, onLineStartSvgs: Path2D[], onLineEndSvgs: Path2D[]): ArcInfo[] => {
         const toReturn: ArcInfo[] = [mainArc];
         let degreesLeft = 360 - mainArc.length;
         let latestArcInfo = mainArc;
@@ -173,7 +211,9 @@ export default class ChexController implements Controller{
                 newArcLength,
                 latestArcInfo.distanceFromCenter,
                 latestArcInfo.rotationSpeed,
-                latestArcInfo.clockwise ? 1 : -1
+                latestArcInfo.clockwise ? 1 : -1,
+                onLineStartSvgs[Math.floor(Math.random() * onLineStartSvgs.length)],
+                onLineEndSvgs[Math.floor(Math.random() * onLineEndSvgs.length)]
             );
             toReturn.push(newArc);
             
@@ -192,7 +232,7 @@ export default class ChexController implements Controller{
         return Math.abs(length);
     }
 
-    private getArcInfoObject(number: number, length: number, radius: number, rotationSpeed: number, rotationDirection: number): ArcInfo{
+    private getArcInfoObject(number: number, length: number, radius: number, rotationSpeed: number, rotationDirection: number, onLineStartSVG: Path2D, onLineEndSVG: Path2D): ArcInfo{
         return {
             number: number,
             length: length, 
@@ -201,7 +241,9 @@ export default class ChexController implements Controller{
             currentAngle: this.config.scatter! ? Math.random() * 360 : 0,
             rotationSpeed: rotationSpeed, 
             clockwise: rotationDirection == 1 ? true : false,
-            spawnMS: Date.now()
+            spawnMS: Date.now(),
+            onLineStartSVG: onLineStartSVG,
+            onLineEndSVG: onLineEndSVG
         };
     }
 
@@ -220,29 +262,14 @@ export default class ChexController implements Controller{
             ctx.closePath();
         }
 
-        this.field.forEach((arc: ArcInfo) => {
-            ctx.beginPath();
-            let rotationDirection = arc.clockwise ? 1 : -1;
-            ctx.arc(
-                center.x, 
-                center.y, 
-                arc.distanceFromCenter, 
-                degreesToRadians(arc.currentAngle) * rotationDirection, 
-                degreesToRadians(arc.currentAngle + arc.length) * rotationDirection
-            );
-            arc.currentAngle += arc.rotationSpeed * (deltaMs / 1000);
-            ctx.lineWidth = arc.width;
-            const arcColor = this.config.arcHSLA!(arc);
-            ctx.strokeStyle = `hsla(${arcColor[0]},${arcColor[1]}%,${arcColor[2]}%,${arcColor[3]})`;
-            ctx.stroke();
-            ctx.closePath();
-        });
+        this.drawArcsOnly(ctx, center, deltaMs);
         /*
         const currentData = ctx.getImageData(0, 0, ctx.canvas.offsetWidth, ctx.canvas.offsetHeight);
         const pixelizedData = this.pixelizor.pixelize(currentData, 40);
         ctx.putImageData(pixelizedData,0,0);
         */
     }
+
 
     private prepareContainerAndGetCanvas = () => {
         let canvas = document.createElement("canvas");
@@ -264,4 +291,53 @@ export default class ChexController implements Controller{
     public normalizeConfig = (config: any) => {};
 
 
+
+    private drawArcsOnly(ctx: CanvasRenderingContext2D, center: { x: number; y: number; }, deltaMs: number) {
+        this.field.forEach((arc: ArcInfo) => {
+            ctx.beginPath();
+            let rotationDirection = arc.clockwise ? 1 : -1;
+            ctx.arc(
+                center.x,
+                center.y,
+                arc.distanceFromCenter,
+                degreesToRadians(arc.currentAngle) * rotationDirection,
+                degreesToRadians(arc.currentAngle + arc.length) * rotationDirection
+            );
+            arc.currentAngle += arc.rotationSpeed * (deltaMs / 1000);
+            ctx.lineWidth = arc.width;
+            const arcColor = this.config.arcHSLA!(arc);
+            ctx.strokeStyle = `hsla(${arcColor[0]},${arcColor[1]}%,${arcColor[2]}%,${arcColor[3]})`;
+            ctx.stroke();
+            ctx.closePath();
+
+            this.appendStartAndEndSVGs(ctx, center, arc);
+        });
+    }
+    private appendStartAndEndSVGs = (ctx: CanvasRenderingContext2D, center : {x: number, y: number}, arc: ArcInfo) =>{
+        const startSvgPos = {
+            x: center.x + (arc.distanceFromCenter - arc.width / 2) * Math.cos(degreesToRadians(arc.currentAngle)),
+            y: center.y + (arc.distanceFromCenter - arc.width / 2) * Math.sin(degreesToRadians(arc.currentAngle))
+        }
+        const endSvgPos = {
+            x: center.x + (arc.distanceFromCenter - arc.width / 2) * Math.cos(degreesToRadians(arc.currentAngle + arc.length)),
+            y: center.y + (arc.distanceFromCenter - arc.width / 2) * Math.sin(degreesToRadians(arc.currentAngle + arc.length))
+        }
+
+        ctx.save();
+        ctx.translate(startSvgPos.x, startSvgPos.y);
+        ctx.rotate(degreesToRadians(arc.currentAngle));
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.scale(arc.width / 2, arc.width / 2);
+        ctx.fill(arc.onLineStartSVG);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(endSvgPos.x, endSvgPos.y);
+        ctx.rotate(degreesToRadians(arc.currentAngle + arc.length));
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.scale(arc.width, arc.width);
+        ctx.fill(arc.onLineEndSVG);
+        ctx.restore();
+        
+    }
 }

@@ -45,7 +45,7 @@ export const getGui = (
             input.step = "1";
         }
         input.value = config.object[indexableKey] as any;
-        input.checked = config.object[indexableKey] as any as boolean;
+        input.checked = Boolean(config.object[indexableKey]);
         input.disabled = !config.isEditable;
 
         if(config.isEditable){

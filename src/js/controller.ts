@@ -140,6 +140,8 @@ export type ArcInfo = {
      * The timestamp of the creation of this arc info object.
      */
     spawnMS: number;
+    onLineStartSVG: Path2D;
+    onLineEndSVG: Path2D;
 }
 export interface ChexConfig extends Contained {
     container: HTMLElement | null;
@@ -236,6 +238,16 @@ export interface ChexConfig extends Contained {
      * Do bare in mind that this can be computationally expensive depending on the size of the field.
      */
     massive?: boolean;
+    /**
+     * Path to SVG element(s) to be drawned at the very start of the arc. 
+     * If used with an array of string, a random one will be chosen for each arc.
+     */
+    onLineStartDraw?: string | string[],
+    /**
+     * Path to SVG element(s) to be drawned at the very end of the arc. 
+     * If used with an array of string, a random one will be chosen for each arc.
+     */
+    onLineEndDraw?: string | string[],
 
     /**
      * A function that given a set of parameters returns a number array of length 4 representing the HSLA color of the arc.
