@@ -248,6 +248,18 @@ export interface ChexConfig extends Contained {
      * If used with an array of string, a random one will be chosen for each arc.
      */
     onLineEndDraw?: string | string[],
+    /**
+     * Scalar used alongside the arcWidth to determine the scale of the SVG element(s) drawn at the start of the arc.
+     */
+    onLineStartScalar?: number;
+    /**
+     * Scalar used alongside the arcWidth to determine the scale of the SVG element(s) drawn at the start of the arc.
+     */
+    onLineEndScalar?: number;
+    /**
+     * Wether or not to only draw the provided svg paths and not the arcs themselves.
+     */
+    svgsOnly?: boolean;
 
     /**
      * A function that given a set of parameters returns a number array of length 4 representing the HSLA color of the arc.

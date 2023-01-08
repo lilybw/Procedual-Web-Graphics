@@ -36,7 +36,10 @@ const defaultConfig: ChexConfig = {
     lengthNormalizationScalar: 2,
     onLineStartDraw: undefined,
     onLineEndDraw: undefined,
-    massive: false
+    onLineStartScalar: 1,
+    onLineEndScalar: 1,
+    massive: false,
+    svgsOnly: true
 }
 
 export default class ChexController implements Controller{
@@ -176,7 +179,6 @@ export default class ChexController implements Controller{
     }
 
     private getPath2Ds(svgPaths: string[] | string | undefined): Path2D[] {
-        console.log(svgPaths);
         if(svgPaths === undefined){
             return [];
         }
@@ -262,14 +264,23 @@ export default class ChexController implements Controller{
             ctx.closePath();
         }
 
-        this.drawArcsOnly(ctx, center, deltaMs);
+        if(this.config.svgsOnly!){
+            this.field.forEach((arc: ArcInfo) => {
+                const arcColor = this.config.arcHSLA!(arc);
+                ctx.strokeStyle = `hsla(${arcColor[0]},${arcColor[1]}%,${arcColor[2]}%,${arcColor[3]})`;
+                this.appendStartAndEndSVGs(ctx, center, arc, deltaMs);
+                arc.currentAngle += arc.rotationSpeed * (deltaMs / 1000);
+            })
+        }else{
+            this.drawArcs(ctx, center, deltaMs);
+        }
+
         /*
         const currentData = ctx.getImageData(0, 0, ctx.canvas.offsetWidth, ctx.canvas.offsetHeight);
         const pixelizedData = this.pixelizor.pixelize(currentData, 40);
         ctx.putImageData(pixelizedData,0,0);
         */
     }
-
 
     private prepareContainerAndGetCanvas = () => {
         let canvas = document.createElement("canvas");
@@ -290,9 +301,7 @@ export default class ChexController implements Controller{
     };
     public normalizeConfig = (config: any) => {};
 
-
-
-    private drawArcsOnly(ctx: CanvasRenderingContext2D, center: { x: number; y: number; }, deltaMs: number) {
+    private drawArcs(ctx: CanvasRenderingContext2D, center: { x: number; y: number; }, deltaMs: number) {
         this.field.forEach((arc: ArcInfo) => {
             ctx.beginPath();
             let rotationDirection = arc.clockwise ? 1 : -1;
@@ -310,34 +319,44 @@ export default class ChexController implements Controller{
             ctx.stroke();
             ctx.closePath();
 
-            this.appendStartAndEndSVGs(ctx, center, arc);
+            this.appendStartAndEndSVGs(ctx, center, arc, rotationDirection);
         });
     }
-    private appendStartAndEndSVGs = (ctx: CanvasRenderingContext2D, center : {x: number, y: number}, arc: ArcInfo) =>{
+    private appendStartAndEndSVGs = (ctx: CanvasRenderingContext2D, center : {x: number, y: number}, arc: ArcInfo, rotationDirection: number) =>{
         const startSvgPos = {
-            x: center.x + (arc.distanceFromCenter - arc.width / 2) * Math.cos(degreesToRadians(arc.currentAngle)),
-            y: center.y + (arc.distanceFromCenter - arc.width / 2) * Math.sin(degreesToRadians(arc.currentAngle))
+            x: center.x + (arc.distanceFromCenter - arc.width) * Math.cos(degreesToRadians(arc.currentAngle) * rotationDirection),
+            y: center.y + (arc.distanceFromCenter - arc.width) * Math.sin(degreesToRadians(arc.currentAngle) * rotationDirection)
         }
         const endSvgPos = {
-            x: center.x + (arc.distanceFromCenter - arc.width / 2) * Math.cos(degreesToRadians(arc.currentAngle + arc.length)),
-            y: center.y + (arc.distanceFromCenter - arc.width / 2) * Math.sin(degreesToRadians(arc.currentAngle + arc.length))
+            x: center.x + (arc.distanceFromCenter - arc.width) * Math.cos(degreesToRadians(arc.currentAngle + arc.length)* rotationDirection),
+            y: center.y + (arc.distanceFromCenter - arc.width) * Math.sin(degreesToRadians(arc.currentAngle + arc.length)* rotationDirection)
         }
 
         ctx.save();
-        ctx.translate(startSvgPos.x, startSvgPos.y);
-        ctx.rotate(degreesToRadians(arc.currentAngle));
+        if(rotationDirection === 1){
+            ctx.translate(startSvgPos.x, startSvgPos.y);
+            ctx.rotate(degreesToRadians(arc.currentAngle) * rotationDirection);
+        }else{
+            ctx.translate(endSvgPos.x, endSvgPos.y);
+            ctx.rotate(degreesToRadians(arc.currentAngle + arc.length) * rotationDirection);
+        }
         ctx.fillStyle = ctx.strokeStyle;
-        ctx.scale(arc.width / 2, arc.width / 2);
-        ctx.fill(arc.onLineStartSVG);
+        ctx.scale(arc.width * this.config.onLineEndScalar!, arc.width * this.config.onLineEndScalar!);
+        ctx.fill(arc.onLineEndSVG);
         ctx.restore();
 
         ctx.save();
-        ctx.translate(endSvgPos.x, endSvgPos.y);
-        ctx.rotate(degreesToRadians(arc.currentAngle + arc.length));
+        if(rotationDirection === 1){
+            ctx.translate(endSvgPos.x, endSvgPos.y);
+            ctx.rotate(degreesToRadians(arc.currentAngle + arc.length) * rotationDirection);
+        }else{
+            ctx.translate(startSvgPos.x, startSvgPos.y);
+            ctx.rotate(degreesToRadians(arc.currentAngle) * rotationDirection);
+        }
         ctx.fillStyle = ctx.strokeStyle;
-        ctx.scale(arc.width, arc.width);
-        ctx.fill(arc.onLineEndSVG);
+        ctx.scale(arc.width * this.config.onLineStartScalar!, arc.width * this.config.onLineStartScalar!);
+        ctx.fill(arc.onLineStartSVG);
+
         ctx.restore();
-        
     }
 }
