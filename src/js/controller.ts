@@ -51,7 +51,7 @@ export interface FloatsConfig extends Contained {
     /**
      * The minimum opacity of the squares
      */
-    squareMinOpcacity?: number;
+    squareMinOpacity?: number;
     /**
      * The maximum opacity AND lightness of the squares
      */
