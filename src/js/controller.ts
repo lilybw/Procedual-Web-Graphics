@@ -3,7 +3,7 @@ export type Controller = {
     /**
      * Updates any cache the controller has.
      */
-    update: () => void;
+    update:  () => void;
     /**
      * Starts the simulation
      */
@@ -288,6 +288,8 @@ export interface CloudConfig extends Contained {
     density?: number;
     minSize?: number;
     maxSize?: number;
+    simSpeed?: number;
+    massive?: boolean;
     imgSource?: string | string[] | null;
-    pelletHSLA?: (pellet: PelletInfo) => [0, 100, 100, 1],
+    pelletHSLA?: (pellet: PelletInfo) => number[],
 }

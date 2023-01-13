@@ -10,7 +10,9 @@ const defaultConfig: CloudConfig = {
     minSize: 5,
     maxSize: 20,
     imgSource: null,
-    pelletHSLA: (pellet: PelletInfo) => [0, 100, 100, 1],
+    massive: false,
+    simSpeed: 30,
+    pelletHSLA: (pellet: PelletInfo) => {return [200, 50, 50, 1]},
 }
 
 export default class CloudController implements Controller{
@@ -18,6 +20,7 @@ export default class CloudController implements Controller{
     public config: CloudConfig;
     public cloudInfo: PelletInfo[] = [];
     public cloud: HTMLElement[] = [];
+    private cloudInterval: NodeJS.Timer | null = null;
 
     public constructor(config: CloudConfig){
         const actualConfig = fillKeys(config, copy(defaultConfig));
@@ -29,8 +32,8 @@ export default class CloudController implements Controller{
         this.normalizeConfig(this.config);
     }
 
-    update = () => {};
-    start = () => {
+    update = async () => {};
+    start = async () => {
         let error = this.verifyConfig(this.config);
         if(error !== null){
             throw new Error(error);
@@ -56,8 +59,11 @@ export default class CloudController implements Controller{
         this.cloudInfo = generatedCloud;
         this.cloud.push(...this.toElements(generatedCloud));
         this.cloud.map((pellet) => this.config.container?.appendChild(pellet));
+
+        this.cloudInterval = setInterval(this.onUpdate, this.config.simSpeed!);
+
     };
-    stop = () => {
+    stop = async () => {
         this.cloudInfo.length = 0;
         this.cloud.map((pellet) => pellet.remove());
     };
@@ -80,7 +86,7 @@ export default class CloudController implements Controller{
         const elements: HTMLElement[] = [];
         cloud.forEach((pellet) => {
             const element = document.createElement("div");
-            element.style.position = "relative";
+            element.style.position = "absolute";
             element.style.left = pellet.x + "px";
             element.style.top = pellet.y + "px";
             element.style.width = pellet.size + "px";
@@ -100,24 +106,32 @@ export default class CloudController implements Controller{
 
         const width = container.clientWidth;
         const height = container.clientHeight;
-
-        const increment = width * this.config.density!;
-
+        
+        const increment = (Math.sqrt(width **2 + height **2)) * this.config.density!;
+        
         let counter = 0;
-        for(let x = 0; x < width; x += increment){
-            for(let y = 0; y < height; y += increment){
-                cloud.push({
-                    x: x,
-                    y: y,
-                    originalPosition: [x,y],
-                    size: Math.random() * (this.config.maxSize! - this.config.minSize!) + this.config.minSize!,
-                    number: counter,
-                    spawnMS: Date.now()
-                });
+        for(let pX = 0; pX < width; pX += increment){
+            for(let pY = 0; pY < height; pY += increment){
+                cloud.push(
+                    this.getNewPelletInfo(
+                        pX, pY, 
+                        counter,
+                        this.config.massive ? increment : undefined)
+                );
                 counter++;
             }
         }
         return cloud;
+    }
+    private getNewPelletInfo = (x: number, y: number, number: number, setSize: number | undefined): PelletInfo => {
+        return {
+            x: x,
+            y: y,
+            originalPosition: [x,y],
+            size: setSize ? setSize : Math.random() * (this.config.maxSize! - this.config.minSize!) + this.config.minSize!,
+            number: number,
+            spawnMS: Date.now()
+        }
     }
 
     public generateRandom = () => {
@@ -132,14 +146,12 @@ export default class CloudController implements Controller{
         console.log(pelletCount);
         for(let i = 0; i < pelletCount; i++){
             let xy = [Math.random() * width, Math.random() * height]
-            cloud.push({
-                x: xy[0],
-                y: xy[1],
-                originalPosition: [xy[0],xy[1]],
-                size: Math.random() * (this.config.maxSize! - this.config.minSize!) + this.config.minSize!,
-                number: i,
-                spawnMS: Date.now()
-            });
+            cloud.push(
+                this.getNewPelletInfo(
+                    xy[0], xy[1], 
+                    i,
+                    undefined)
+            );
         }
         return cloud;
     }
