@@ -39,7 +39,7 @@ const defaultConfig: ChexConfig = {
     onLineStartScalar: 1,
     onLineEndScalar: 1,
     massive: false,
-    svgsOnly: true
+    svgsOnly: false
 }
 
 export default class ChexController implements Controller{
@@ -182,6 +182,7 @@ export default class ChexController implements Controller{
         if(svgPaths === undefined){
             return [];
         }
+
         if(typeof svgPaths === "string"){
             //TODO: Fix the svg UTIL
             return [new Path2D(svgPaths as string)];
@@ -264,15 +265,21 @@ export default class ChexController implements Controller{
             ctx.closePath();
         }
 
+        this.field.forEach((arc: ArcInfo) => {
+            this.tickArc(arc,deltaMs);
+        })
+        
         if(this.config.svgsOnly!){
             this.field.forEach((arc: ArcInfo) => {
                 const arcColor = this.config.arcHSLA!(arc);
                 ctx.strokeStyle = `hsla(${arcColor[0]},${arcColor[1]}%,${arcColor[2]}%,${arcColor[3]})`;
-                this.appendStartAndEndSVGs(ctx, center, arc, deltaMs);
-                arc.currentAngle += arc.rotationSpeed * (deltaMs / 1000);
+                this.appendStartAndEndSVGs(ctx, center, arc, arc.clockwise ? 1 : -1);
             })
         }else{
-            this.drawArcs(ctx, center, deltaMs);
+            this.field.forEach((arc: ArcInfo) => {
+                this.drawArc(ctx, center, arc);
+                this.appendStartAndEndSVGs(ctx, center, arc, arc.clockwise ? 1 : -1);
+            });
         }
 
         /*
@@ -282,6 +289,60 @@ export default class ChexController implements Controller{
         */
     }
 
+    private tickArc(arc: ArcInfo, deltaMs: number){
+       arc.currentAngle += arc.rotationSpeed * (deltaMs / 1000);
+    }
+
+    private drawArc(ctx: CanvasRenderingContext2D, center: { x: number; y: number; }, arc: ArcInfo) {
+            ctx.beginPath();
+            let rotationDirection = arc.clockwise ? 1 : -1;
+            ctx.arc(
+                center.x,
+                center.y,
+                arc.distanceFromCenter,
+                degreesToRadians(arc.currentAngle) * rotationDirection,
+                degreesToRadians(arc.currentAngle + arc.length) * rotationDirection
+            );
+            ctx.lineWidth = arc.width;
+            const arcColor = this.config.arcHSLA!(arc);
+            ctx.strokeStyle = `hsla(${arcColor[0]},${arcColor[1]}%,${arcColor[2]}%,${arcColor[3]})`;
+            ctx.stroke();
+            ctx.closePath();
+    }
+
+    private appendStartAndEndSVGs = (ctx: CanvasRenderingContext2D, center : {x: number, y: number}, arc: ArcInfo, rotationDirection: number) =>{
+        const startSvgPos = {
+            x: center.x + (arc.distanceFromCenter - arc.width) * Math.cos(degreesToRadians(arc.currentAngle) * rotationDirection),
+            y: center.y + (arc.distanceFromCenter - arc.width) * Math.sin(degreesToRadians(arc.currentAngle) * rotationDirection)
+        }
+
+        const endSvgPos = {
+            x: center.x + (arc.distanceFromCenter - arc.width) * Math.cos(degreesToRadians(arc.currentAngle + arc.length) * rotationDirection),
+            y: center.y + (arc.distanceFromCenter - arc.width) * Math.sin(degreesToRadians(arc.currentAngle + arc.length) * rotationDirection)
+        }
+
+        if(arc.onLineStartSVG ){
+            this.fillOffsetSVG(ctx, arc.onLineStartSVG, startSvgPos, rotationDirection, arc);
+        }
+        if(arc.onLineEndSVG){
+            this.fillOffsetSVG(ctx, arc.onLineEndSVG, endSvgPos, rotationDirection, arc);
+        }
+    }
+
+    private fillOffsetSVG(ctx: CanvasRenderingContext2D, svg: Path2D, offset: {x:number,y:number}, rotationDirection: number, arc: ArcInfo){
+        ctx.save();
+        ctx.translate(offset.x, offset.y);
+        if(rotationDirection === 1){
+            ctx.rotate(degreesToRadians(arc.currentAngle) * rotationDirection);
+        }else{
+            ctx.rotate(degreesToRadians(arc.currentAngle + arc.length) * rotationDirection);
+        }
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.scale(arc.width * this.config.onLineEndScalar!, arc.width * this.config.onLineEndScalar!);
+        ctx.fill(svg);
+        ctx.restore();
+    }
+    
     private prepareContainerAndGetCanvas = () => {
         let canvas = document.createElement("canvas");
 
@@ -300,63 +361,4 @@ export default class ChexController implements Controller{
         return null
     };
     public normalizeConfig = (config: any) => {};
-
-    private drawArcs(ctx: CanvasRenderingContext2D, center: { x: number; y: number; }, deltaMs: number) {
-        this.field.forEach((arc: ArcInfo) => {
-            ctx.beginPath();
-            let rotationDirection = arc.clockwise ? 1 : -1;
-            ctx.arc(
-                center.x,
-                center.y,
-                arc.distanceFromCenter,
-                degreesToRadians(arc.currentAngle) * rotationDirection,
-                degreesToRadians(arc.currentAngle + arc.length) * rotationDirection
-            );
-            arc.currentAngle += arc.rotationSpeed * (deltaMs / 1000);
-            ctx.lineWidth = arc.width;
-            const arcColor = this.config.arcHSLA!(arc);
-            ctx.strokeStyle = `hsla(${arcColor[0]},${arcColor[1]}%,${arcColor[2]}%,${arcColor[3]})`;
-            ctx.stroke();
-            ctx.closePath();
-
-            this.appendStartAndEndSVGs(ctx, center, arc, rotationDirection);
-        });
-    }
-    private appendStartAndEndSVGs = (ctx: CanvasRenderingContext2D, center : {x: number, y: number}, arc: ArcInfo, rotationDirection: number) =>{
-        const startSvgPos = {
-            x: center.x + (arc.distanceFromCenter - arc.width) * Math.cos(degreesToRadians(arc.currentAngle) * rotationDirection),
-            y: center.y + (arc.distanceFromCenter - arc.width) * Math.sin(degreesToRadians(arc.currentAngle) * rotationDirection)
-        }
-        const endSvgPos = {
-            x: center.x + (arc.distanceFromCenter - arc.width) * Math.cos(degreesToRadians(arc.currentAngle + arc.length)* rotationDirection),
-            y: center.y + (arc.distanceFromCenter - arc.width) * Math.sin(degreesToRadians(arc.currentAngle + arc.length)* rotationDirection)
-        }
-
-        ctx.save();
-        if(rotationDirection === 1){
-            ctx.translate(startSvgPos.x, startSvgPos.y);
-            ctx.rotate(degreesToRadians(arc.currentAngle) * rotationDirection);
-        }else{
-            ctx.translate(endSvgPos.x, endSvgPos.y);
-            ctx.rotate(degreesToRadians(arc.currentAngle + arc.length) * rotationDirection);
-        }
-        ctx.fillStyle = ctx.strokeStyle;
-        ctx.scale(arc.width * this.config.onLineEndScalar!, arc.width * this.config.onLineEndScalar!);
-        ctx.fill(arc.onLineEndSVG);
-        ctx.restore();
-
-        ctx.save();
-        if(rotationDirection === 1){
-            ctx.translate(endSvgPos.x, endSvgPos.y);
-            ctx.rotate(degreesToRadians(arc.currentAngle + arc.length) * rotationDirection);
-        }else{
-            ctx.translate(startSvgPos.x, startSvgPos.y);
-            ctx.rotate(degreesToRadians(arc.currentAngle) * rotationDirection);
-        }
-        ctx.fillStyle = ctx.strokeStyle;
-        ctx.scale(arc.width * this.config.onLineStartScalar!, arc.width * this.config.onLineStartScalar!);
-        ctx.fill(arc.onLineStartSVG);
-
-        ctx.restore();
-    }
 }

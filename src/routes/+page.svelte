@@ -13,12 +13,8 @@
     onMount(async () => {
         const containerDiv: HTMLDivElement | null = document.getElementById("container") as HTMLDivElement;
         controller = new ChexController(
-            {container: containerDiv, 
-                normalizeArcLength: true,
-                normalizeSpeed: true,
-                onLineStartDraw: [unitPlusSouth],
-                onLineEndDraw: [unitPlus],
-                maxArcLength: 1
+            {container: containerDiv,
+                svgsOnly: false,
             });
         controller.start();
         
@@ -27,7 +23,7 @@
                 {object: (controller as ChexController).config, 
                     titleText: 'Floats Config', 
                     isEditable: true,
-                    onAfterUpdate: () => controller?.update()
+                    onAfterUpdate: () => controller?.update(),
                 }
             )
         );
