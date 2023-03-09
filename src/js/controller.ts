@@ -293,3 +293,10 @@ export interface CloudConfig extends Contained {
     imgSource?: string | string[] | null;
     pelletHSLA?: (pellet: PelletInfo) => number[],
 }
+
+export interface VoronoiConfig extends Contained {
+    container: HTMLElement | null;
+    static?: boolean;
+    pointCount?: number;
+    
+}

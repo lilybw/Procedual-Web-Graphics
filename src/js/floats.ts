@@ -10,7 +10,7 @@ const defaultConfig: FloatsConfig = {
     travelTime: 20_000, // How many milliseconds it takes a square to cross the screen
     generationSpeed: 100, // How many milliseconds between each square generation.
     maxSquareSize: 400, // The maximum size of the squares in pixels
-    squareMinOpcacity: 0.3, // The minimum opacity of the squares
+    squareMinOpacity: 0.3, // The minimum opacity of the squares
     squareMaxOpacity: 0.6, // The maximum opacity of the squares
     squareMinSize: 10, // The minimum size of the squares in pixels
     fadeStartTime: 10_000, // The time in ms it takes for the squares to fade out
@@ -60,7 +60,7 @@ export default class FloatsController implements Controller {
     }
     public verifyConfig = (config: FloatsConfig): string | null => {
 
-        if (config.squareMinOpcacity! > config.squareMaxOpacity!) {
+        if (config.squareMinOpacity! > config.squareMaxOpacity!) {
             return ("squareMinOpcacity cannot be greater than squareMaxOpacity");
         }
         if (config.squareMinSize! > config.maxSquareSize!) {
@@ -213,7 +213,7 @@ export default class FloatsController implements Controller {
     }
 
     private setColorsAndSun(square: HTMLElement, isImage: boolean) {
-        const hsl = [this.config.baseColorHS![0], this.config.baseColorHS![1], Math.min(Math.random() + this.config.squareMinOpcacity!, this.config.squareMaxOpacity!) * 100];
+        const hsl = [this.config.baseColorHS![0], this.config.baseColorHS![1], Math.min(Math.random() + this.config.squareMinOpacity!, this.config.squareMaxOpacity!) * 100];
         const baseColor = `hsl(${hsl[0]}, ${hsl[1]}%,${hsl[2]}%)`;
 
         if(this.config.useSun){
@@ -233,7 +233,7 @@ export default class FloatsController implements Controller {
         square.style.position = "absolute";
         square.style.zIndex = this.config.zIndex ? this.config.zIndex.toString() : "10";
         if (!this.config.fullColor) {
-            square.style.opacity = `${Math.min(Math.random() + this.config.squareMinOpcacity!, this.config.squareMaxOpacity!)}`;
+            square.style.opacity = `${Math.min(Math.random() + this.config.squareMinOpacity!, this.config.squareMaxOpacity!)}`;
         }
     }
 
