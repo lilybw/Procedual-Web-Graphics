@@ -1,4 +1,4 @@
-// Author: https://github.com/GustavBW
+// Author: https://github.com/lilybw
 
 import { scaleVector, dotProduct, degreesToRadians, vectorMagnitude, projectVector } from "./util/vmath";
 import { copy, fillKeys } from "./util/objUtil";

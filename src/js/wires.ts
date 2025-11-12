@@ -1,4 +1,4 @@
-//Author: https://github.com/GustavBW
+//Author: https://github.com/lilybw
 
 import type { WiresConfig, Controller } from "./controller";
 

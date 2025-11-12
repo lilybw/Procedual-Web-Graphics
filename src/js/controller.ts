@@ -1,4 +1,4 @@
-//Author: github.com/GustavBW
+//Author: github.com/lilybw
 export type Controller = {
     /**
      * Updates any cache the controller has.

@@ -1,4 +1,4 @@
-//Author github.com/GustavBW
+//Author github.com/lilybw
 import type { Controller, CloudConfig, PelletInfo } from "./controller";
 import { fillKeys, copy } from "./util/objUtil";
 
